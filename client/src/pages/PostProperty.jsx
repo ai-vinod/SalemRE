@@ -739,9 +739,11 @@ const MyPropertiesPage = ({ onNavigate }) => {
 // Top-level App Component to wrap the providers and handle routing
 const App = () => {
   const [appState, setAppState] = useState({
-    view: 'loading',
     user: null,
+    view: 'post-property', // Set a default view, but we will prevent initial render.
   });
+
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
 
   // Auth simulation and state management
   useEffect(() => {
@@ -751,7 +753,6 @@ const App = () => {
       
       const mockUser = { id: 'mock-user-123', email: 'user@example.com' };
       
-      // Update the entire state in a single, atomic operation
       if (mockUser) {
         setAppState({
           user: mockUser,
@@ -763,6 +764,7 @@ const App = () => {
           view: 'login',
         });
       }
+      setIsAuthChecked(true);
     };
     
     authCheck();
@@ -774,12 +776,6 @@ const App = () => {
 
   const renderPage = () => {
     switch (appState.view) {
-      case 'loading':
-        return (
-          <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <LoadingSpinner />
-          </div>
-        );
       case 'post-property':
         return <PostPropertyPage onNavigate={handleNavigate} />;
       case 'my-properties':
@@ -790,6 +786,14 @@ const App = () => {
         return null;
     }
   };
+
+  if (!isAuthChecked) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user: appState.user }}>
