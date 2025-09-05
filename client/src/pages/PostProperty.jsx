@@ -738,37 +738,48 @@ const MyPropertiesPage = ({ onNavigate }) => {
 
 // Top-level App Component to wrap the providers and handle routing
 const App = () => {
-  const [currentPage, setCurrentPage] = useState('loading');
-  const [user, setUser] = useState(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [appState, setAppState] = useState({
+    view: 'loading',
+    user: null,
+  });
 
   // Auth simulation and state management
   useEffect(() => {
-    // Simulate fetching the user's authentication status
-    const mockUser = { id: 'mock-user-123', email: 'user@example.com' };
+    const authCheck = async () => {
+      // Simulate an async authentication check (e.g., fetching a user token)
+      await new Promise(resolve => setTimeout(resolve, 500)); 
+      
+      const mockUser = { id: 'mock-user-123', email: 'user@example.com' };
+      
+      // Update the entire state in a single, atomic operation
+      if (mockUser) {
+        setAppState({
+          user: mockUser,
+          view: 'post-property',
+        });
+      } else {
+        setAppState({
+          user: null,
+          view: 'login',
+        });
+      }
+    };
     
-    setTimeout(() => {
-      setIsAuthLoading(false);
-      setUser(mockUser);
-      // Automatically navigate to the main page after auth is done
-      setCurrentPage('post-property');
-    }, 500); // Simulate network delay
+    authCheck();
   }, []);
 
   const handleNavigate = (page) => {
-    setCurrentPage(page);
+    setAppState(prev => ({ ...prev, view: page }));
   };
 
-  if (isAuthLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
   const renderPage = () => {
-    switch (currentPage) {
+    switch (appState.view) {
+      case 'loading':
+        return (
+          <div className="flex items-center justify-center min-h-screen bg-gray-100">
+            <LoadingSpinner />
+          </div>
+        );
       case 'post-property':
         return <PostPropertyPage onNavigate={handleNavigate} />;
       case 'my-properties':
@@ -781,7 +792,7 @@ const App = () => {
   };
 
   return (
-    <AuthContext.Provider value={{ user }}>
+    <AuthContext.Provider value={{ user: appState.user }}>
       <ErrorProvider>
         <LoadingProvider>
           {renderPage()}
