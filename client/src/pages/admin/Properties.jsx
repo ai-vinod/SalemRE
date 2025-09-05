@@ -51,13 +51,6 @@ const Properties = () => {
       } finally {
         clearLoading('admin-properties')
       }
-      catch (error) {
-        console.error('Error fetching properties:', error)
-        setProperties([])
-        setTotalPages(1)
-      } finally {
-        clearLoading('admin-properties')
-      }
     }
 
     fetchProperties()
