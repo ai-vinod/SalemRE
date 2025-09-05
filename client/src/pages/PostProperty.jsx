@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useLoading, useError } from '../contexts/LoadingContext'
+import { useLoading } from '../contexts/LoadingContext'
+import { useError } from '../contexts/ErrorContext'
 import { useApi } from '../hooks/useApi'
 import { FiUpload, FiAlertCircle, FiCheckCircle } from 'react-icons/fi'
 import propertyService from '../services/propertyService'
@@ -11,7 +12,7 @@ import LoadingSpinner from '../components/ui/LoadingSpinner'
 const PostProperty = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const { isLoading, setLoading, clearLoading } = useLoading()
+  const { isLoading, setLoading } = useLoading()
   const { getError, setError, clearError } = useError()
   const { request } = useApi()
   
@@ -253,8 +254,8 @@ const PostProperty = () => {
       console.error('Error posting property:', err)
       setError('property-form', err.message || 'Failed to post property. Please try again.')
     } finally {
-      clearLoading('upload-images')
-      clearLoading('create-property')
+      setLoading('upload-images', false)
+      setLoading('create-property', false)
     }
   }
 
