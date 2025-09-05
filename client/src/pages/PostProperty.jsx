@@ -96,7 +96,7 @@ export const useApi = () => {
 const propertyService = {
   createProperty: async (propertyData) => {
     console.log('Posting property...', propertyData);
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    // Removed the simulated delay to prevent flickering
     if (propertyData.title.includes('error')) {
       throw new Error('Server error during property creation.');
     }
@@ -107,7 +107,7 @@ const propertyService = {
 const uploadService = {
   uploadPropertyImages: async (formData) => {
     console.log('Uploading images...');
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
+    // Removed the simulated delay to prevent flickering
     const mockUrl = `https://placehold.co/600x400/000000/FFFFFF?text=PropertyImage`;
     return { url: mockUrl };
   },
