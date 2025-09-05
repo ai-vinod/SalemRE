@@ -8,11 +8,15 @@ export const useLoading = () => {
   return { loading, setLoading, clearLoading };
 };
 
-// Error handling is now managed in ErrorContext.jsx
+// Hook to manage error states
+export const useError = () => {
+  const { error, setError, clearError } = useContext(LoadingContext);
+  return { error, setError, clearError };
+};
 
 export const LoadingProvider = ({ children }) => {
   const [loading, setLoading] = useState({});
-  const [error, setError] = useState({}); // State for managing errors
+  const [error, setError] = useState({});
 
   const setLoadingState = (key, value) => {
     setLoading(prev => ({ ...prev, [key]: value }));
@@ -25,11 +29,11 @@ export const LoadingProvider = ({ children }) => {
     });
   };
 
-  const setErrorState = (key, message) => { // Function to set an error
+  const setErrorState = (key, message) => {
     setError(prev => ({ ...prev, [key]: message }));
   };
 
-  const clearErrorState = (key) => { // Function to clear an error
+  const clearErrorState = (key) => {
     setError(prev => {
       const { [key]: _, ...rest } = prev;
       return rest;
