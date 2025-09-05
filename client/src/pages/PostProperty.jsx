@@ -625,7 +625,7 @@ const PostPropertyPage = ({ onNavigate }) => {
                   </div>
                 </div>
                 
-                {imagePreviewUrls.length > 0 && (
+                {Array.isArray(imagePreviewUrls) && imagePreviewUrls.length > 0 && (
                   <div className="mt-4">
                     <h3 className="text-sm font-medium text-gray-700 mb-2">Image Previews:</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
