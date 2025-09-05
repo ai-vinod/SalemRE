@@ -1,21 +1,185 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { useLoading } from '../contexts/LoadingContext'
-import { useError } from '../contexts/ErrorContext'
-import { useApi } from '../hooks/useApi'
-import { FiUpload, FiAlertCircle, FiCheckCircle } from 'react-icons/fi'
-import propertyService from '../services/propertyService'
-import uploadService from '../services/uploadService'
-import LoadingSpinner from '../components/ui/LoadingSpinner'
+import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+// All dependencies (contexts, hooks, services, and components) are included in this single file.
+
+// --- Contexts and Hooks ---
+
+// AuthContext
+const AuthContext = createContext(null);
+export const useAuth = () => useContext(AuthContext);
+
+// Use a mock user for demonstration within a single-file React app.
+// In a real application, you would connect this to a real authentication service.
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // Simulate fetching the user's authentication status
+    const mockUser = { id: 'mock-user-123', email: 'user@example.com' };
+    setUser(mockUser);
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ user }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+
+// LoadingContext
+const LoadingContext = createContext(null);
+export const useLoading = () => useContext(LoadingContext);
+
+export const LoadingProvider = ({ children }) => {
+  const [loadingStates, setLoadingStates] = useState({});
+
+  const setLoading = useCallback((key, state) => {
+    setLoadingStates(prev => ({ ...prev, [key]: state }));
+  }, []);
+
+  const clearLoading = useCallback((key) => {
+    setLoadingStates(prev => {
+      const newStates = { ...prev };
+      delete newStates[key];
+      return newStates;
+    });
+  }, []);
+
+  const isLoading = useCallback((key) => {
+    return !!loadingStates[key];
+  }, [loadingStates]);
+
+  return (
+    <LoadingContext.Provider value={{ isLoading, setLoading, clearLoading }}>
+      {children}
+    </LoadingContext.Provider>
+  );
+};
+
+// ErrorContext
+const ErrorContext = createContext(null);
+export const useError = () => useContext(ErrorContext);
+
+export const ErrorProvider = ({ children }) => {
+  const [errors, setErrors] = useState({});
+
+  const setError = useCallback((key, message) => {
+    setErrors(prev => ({ ...prev, [key]: message }));
+  }, []);
+
+  const clearError = useCallback((key) => {
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[key];
+      return newErrors;
+    });
+  }, []);
+
+  const getError = useCallback((key) => {
+    return errors[key];
+  }, [errors]);
+
+  return (
+    <ErrorContext.Provider value={{ getError, setError, clearError }}>
+      {children}
+    </ErrorContext.Provider>
+  );
+};
+
+// useApi hook (a simplified mock version)
+export const useApi = () => {
+  const { setError } = useError();
+  const { setLoading } = useLoading();
+
+  const request = useCallback(async (apiCall, loadingKey) => {
+    try {
+      setLoading(loadingKey, true);
+      const result = await apiCall();
+      return result;
+    } catch (err) {
+      console.error('API Error:', err);
+      setError(loadingKey, err.message || 'An unexpected error occurred.');
+      throw err;
+    } finally {
+      setLoading(loadingKey, false);
+    }
+  }, [setError, setLoading]);
+
+  return { request };
+};
+
+// --- Services (Mocked) ---
+
+const propertyService = {
+  createProperty: async (propertyData) => {
+    console.log('Posting property...', propertyData);
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    if (propertyData.title.includes('error')) {
+      throw new Error('Server error during property creation.');
+    }
+    return { success: true, message: 'Property created successfully' };
+  },
+};
+
+const uploadService = {
+  uploadPropertyImages: async (formData) => {
+    console.log('Uploading images...');
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
+    const mockUrl = `https://placehold.co/600x400/000000/FFFFFF?text=PropertyImage`;
+    return { url: mockUrl };
+  },
+};
+
+// --- UI Components ---
+
+const LoadingSpinner = ({ size = 'md', className = '' }) => {
+  const sizeClass = size === 'sm' ? 'h-4 w-4' : 'h-8 w-8';
+  return (
+    <div className={`inline-block ${className}`}>
+      <svg className={`animate-spin ${sizeClass} text-indigo-500`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    </div>
+  );
+};
+
+// Inline SVG Icons to replace react-icons/fi
+const UploadIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+  </svg>
+);
+
+const AlertCircleIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const CheckCircleIcon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+const Trash2Icon = (props) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.013 21H7.987a2 2 0 01-1.92-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+  </svg>
+);
+
+// --- Main Component ---
 
 const PostProperty = () => {
-  const { user } = useAuth()
-  const navigate = useNavigate()
-  const { isLoading, setLoading } = useLoading()
-  const { getError, setError, clearError } = useError()
-  const { request } = useApi()
-  
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { isLoading, setLoading } = useLoading();
+  const { getError, setError, clearError } = useError();
+  const { request } = useApi();
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -25,18 +189,36 @@ const PostProperty = () => {
     location: '',
     address: '',
     features: []
-  })
-  const [images, setImages] = useState([])
-  const [imagePreviewUrls, setImagePreviewUrls] = useState([])
-  const [success, setSuccess] = useState(false)
-  const [step, setStep] = useState(1)
+  });
+  const [images, setImages] = useState([]);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState([]);
+  const [success, setSuccess] = useState(false);
+  const [step, setStep] = useState(1);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
+  // Auth check and redirection
+  useEffect(() => {
+    const checkAuth = async () => {
+      // Simulate waiting for auth state to resolve
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setIsAuthReady(true);
+    };
+
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (isAuthReady && !user) {
+      navigate('/login'); // Redirect to login page if not authenticated
+    }
+  }, [isAuthReady, user, navigate]);
 
   const propertyTypes = [
     { id: 'plot', name: 'Plot' },
     { id: 'apartment', name: 'Apartment' },
     { id: 'house', name: 'House' },
     { id: 'commercial', name: 'Commercial' }
-  ]
+  ];
 
   const locations = [
     { id: 'Ammapet', name: 'Ammapet' },
@@ -46,7 +228,7 @@ const PostProperty = () => {
     { id: 'Shevapet', name: 'Shevapet' },
     { id: 'Suramangalam', name: 'Suramangalam' },
     { id: 'Other', name: 'Other' }
-  ]
+  ];
 
   const featureOptions = [
     'Corner Plot',
@@ -70,413 +252,189 @@ const PostProperty = () => {
     'Gym',
     'Elevator',
     'Power Backup'
-  ]
+  ];
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
-    }))
-  }
+    }));
+  };
 
   const handleFeatureToggle = (feature) => {
     setFormData(prev => {
-      const features = [...prev.features]
+      const features = [...prev.features];
       if (features.includes(feature)) {
         return {
           ...prev,
           features: features.filter(f => f !== feature)
-        }
+        };
       } else {
         return {
           ...prev,
           features: [...features, feature]
-        }
+        };
       }
-    })
-  }
+    });
+  };
 
   const handleImageChange = (e) => {
-    e.preventDefault()
-    
-    const files = Array.from(e.target.files)
-    
-    // Limit to 5 images
+    e.preventDefault();
+
+    const files = Array.from(e.target.files);
+
     if (images.length + files.length > 5) {
-      setError('property-form', 'You can upload a maximum of 5 images')
-      return
+      setError('property-form', 'You can upload a maximum of 5 images');
+      return;
     }
-    
-    clearError('property-form')
-    
-    // Preview images
-    const newImagePreviewUrls = [...imagePreviewUrls]
-    const newImages = [...images]
-    
+
+    clearError('property-form');
+
+    const newImagePreviewUrls = [...imagePreviewUrls];
+    const newImages = [...images];
+
     files.forEach(file => {
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onloadend = () => {
-        newImagePreviewUrls.push(reader.result)
-        setImagePreviewUrls([...newImagePreviewUrls])
-      }
-      reader.readAsDataURL(file)
-      newImages.push(file)
-    })
-    
-    setImages(newImages)
-  }
+        newImagePreviewUrls.push(reader.result);
+        setImagePreviewUrls([...newImagePreviewUrls]);
+      };
+      reader.readAsDataURL(file);
+      newImages.push(file);
+    });
+
+    setImages(newImages);
+  };
 
   const removeImage = (index) => {
-    const newImages = [...images]
-    const newImagePreviewUrls = [...imagePreviewUrls]
-    
-    newImages.splice(index, 1)
-    newImagePreviewUrls.splice(index, 1)
-    
-    setImages(newImages)
-    setImagePreviewUrls(newImagePreviewUrls)
-  }
+    const newImages = [...images];
+    const newImagePreviewUrls = [...imagePreviewUrls];
+
+    newImages.splice(index, 1);
+    newImagePreviewUrls.splice(index, 1);
+
+    setImages(newImages);
+    setImagePreviewUrls(newImagePreviewUrls);
+  };
 
   const validateStep1 = () => {
-    clearError('property-form')
+    clearError('property-form');
     if (!formData.title.trim()) {
-      setError('property-form', 'Title is required')
-      return false
+      setError('property-form', 'Title is required');
+      return false;
     }
     if (!formData.property_type) {
-      setError('property-form', 'Property type is required')
-      return false
+      setError('property-form', 'Property type is required');
+      return false;
     }
     if (!formData.price || isNaN(formData.price) || Number(formData.price) <= 0) {
-      setError('property-form', 'Valid price is required')
-      return false
+      setError('property-form', 'Valid price is required');
+      return false;
     }
     if (!formData.size || isNaN(formData.size) || Number(formData.size) <= 0) {
-      setError('property-form', 'Valid size is required')
-      return false
+      setError('property-form', 'Valid size is required');
+      return false;
     }
     if (!formData.location) {
-      setError('property-form', 'Location is required')
-      return false
+      setError('property-form', 'Location is required');
+      return false;
     }
-    return true
-  }
+    return true;
+  };
 
   const validateStep2 = () => {
-    clearError('property-form')
+    clearError('property-form');
     if (!formData.description.trim()) {
-      setError('property-form', 'Description is required')
-      return false
+      setError('property-form', 'Description is required');
+      return false;
     }
     if (!formData.address.trim()) {
-      setError('property-form', 'Address is required')
-      return false
+      setError('property-form', 'Address is required');
+      return false;
     }
     if (formData.features.length === 0) {
-      setError('property-form', 'Please select at least one feature')
-      return false
+      setError('property-form', 'Please select at least one feature');
+      return false;
     }
-    return true
-  }
+    return true;
+  };
 
   const validateStep3 = () => {
-    clearError('property-form')
+    clearError('property-form');
     if (images.length === 0) {
-      setError('property-form', 'Please upload at least one image')
-      return false
+      setError('property-form', 'Please upload at least one image');
+      return false;
     }
-    return true
-  }
+    return true;
+  };
 
   const nextStep = () => {
     if (step === 1 && validateStep1()) {
-      setStep(2)
+      setStep(2);
     } else if (step === 2 && validateStep2()) {
-      setStep(3)
+      setStep(3);
     }
-  }
+  };
 
   const prevStep = () => {
-    setStep(step - 1)
-  }
+    setStep(step - 1);
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     if (!validateStep3()) {
-      return
+      return;
     }
-    
-    clearError('property-form')
-    
+
+    clearError('property-form');
+
     try {
-      // First upload images to get their URLs
-      setLoading('upload-images', true)
-      
+      setLoading('upload-images', true);
       const imageUrls = await Promise.all(
         images.map(async (image) => {
-          const imageFormData = new FormData()
-          imageFormData.append('image', image)
-          
+          const imageFormData = new FormData();
+          imageFormData.append('image', image);
           const uploadResult = await request(
-            async () => await uploadService.uploadPropertyImages(imageFormData),
+            () => uploadService.uploadPropertyImages(imageFormData),
             'upload-images'
-          )
-          
-          return uploadResult.url
+          );
+          return uploadResult.url;
         })
-      )
-      
-      // Then create the property with the image URLs
-      setLoading('create-property', true)
-      
+      );
+      setLoading('upload-images', false);
+
+      setLoading('create-property', true);
       const propertyData = {
         ...formData,
         price: Number(formData.price),
         size: Number(formData.size),
-        images: imageUrls
-      }
-      
-      await request(
-        async () => await propertyService.createProperty(propertyData),
-        'create-property'
-      )
-      
-      setSuccess(true)
-      
-      // Reset form after successful submission
+        images: imageUrls,
+      };
+
+      await request(() => propertyService.createProperty(propertyData), 'create-property');
+      setLoading('create-property', false);
+
+      setSuccess(true);
+
       setTimeout(() => {
-        navigate('/my-properties')
-      }, 2000)
-      
+        navigate('/my-properties');
+      }, 2000);
+
     } catch (err) {
-      console.error('Error posting property:', err)
-      setError('property-form', err.message || 'Failed to post property. Please try again.')
-    } finally {
-      setLoading('upload-images', false)
-      setLoading('create-property', false)
+      console.error('Error posting property:', err);
+      setError('property-form', err.message || 'Failed to post property. Please try again.');
     }
+  };
+
+  if (!isAuthReady) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <LoadingSpinner />
+      </div>
+    );
   }
-
-  const renderStep1 = () => (
-    <div>
-      <h2 className="text-xl font-semibold mb-6">Basic Information</h2>
-      
-      <div className="mb-4">
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-          Property Title *
-        </label>
-        <input
-          type="text"
-          id="title"
-          name="title"
-          value={formData.title}
-          onChange={handleChange}
-          className="form-input"
-          placeholder="e.g. Premium Plot in Ammapet"
-          required
-        />
-      </div>
-      
-      <div className="mb-4">
-        <label htmlFor="property_type" className="block text-sm font-medium text-gray-700 mb-1">
-          Property Type *
-        </label>
-        <select
-          id="property_type"
-          name="property_type"
-          value={formData.property_type}
-          onChange={handleChange}
-          className="form-input"
-          required
-        >
-          <option value="">Select Property Type</option>
-          {propertyTypes.map(type => (
-            <option key={type.id} value={type.id}>
-              {type.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div>
-          <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-            Price (₹) *
-          </label>
-          <input
-            type="number"
-            id="price"
-            name="price"
-            value={formData.price}
-            onChange={handleChange}
-            className="form-input"
-            placeholder="e.g. 2500000"
-            required
-          />
-        </div>
-        
-        <div>
-          <label htmlFor="size" className="block text-sm font-medium text-gray-700 mb-1">
-            Size (sq.ft) *
-          </label>
-          <input
-            type="number"
-            id="size"
-            name="size"
-            value={formData.size}
-            onChange={handleChange}
-            className="form-input"
-            placeholder="e.g. 1200"
-            required
-          />
-        </div>
-      </div>
-      
-      <div className="mb-4">
-        <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
-          Location *
-        </label>
-        <select
-          id="location"
-          name="location"
-          value={formData.location}
-          onChange={handleChange}
-          className="form-input"
-          required
-        >
-          <option value="">Select Location</option>
-          {locations.map(location => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
-  )
-
-  const renderStep2 = () => (
-    <div>
-      <h2 className="text-xl font-semibold mb-6">Property Details</h2>
-      
-      <div className="mb-4">
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          Description *
-        </label>
-        <textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          rows="4"
-          className="form-input"
-          placeholder="Describe your property in detail..."
-          required
-        ></textarea>
-      </div>
-      
-      <div className="mb-4">
-        <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-          Full Address *
-        </label>
-        <textarea
-          id="address"
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-          rows="2"
-          className="form-input"
-          placeholder="Enter the complete address of the property"
-          required
-        ></textarea>
-      </div>
-      
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Features *
-        </label>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {featureOptions.map(feature => (
-            <div key={feature} className="flex items-center">
-              <input
-                type="checkbox"
-                id={`feature-${feature}`}
-                checked={formData.features.includes(feature)}
-                onChange={() => handleFeatureToggle(feature)}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label htmlFor={`feature-${feature}`} className="ml-2 text-sm text-gray-700">
-                {feature}
-              </label>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-
-  const renderStep3 = () => (
-    <div>
-      <h2 className="text-xl font-semibold mb-6">Upload Images</h2>
-      
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Property Images *
-        </label>
-        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-          <div className="space-y-1 text-center">
-            <FiUpload className="mx-auto h-12 w-12 text-gray-400" />
-            <div className="flex text-sm text-gray-600">
-              <label htmlFor="images" className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none">
-                <span>Upload images</span>
-                <input 
-                  id="images" 
-                  name="images" 
-                  type="file" 
-                  multiple 
-                  accept="image/*" 
-                  className="sr-only" 
-                  onChange={handleImageChange} 
-                />
-              </label>
-              <p className="pl-1">or drag and drop</p>
-            </div>
-            <p className="text-xs text-gray-500">
-              PNG, JPG, GIF up to 5MB (max 5 images)
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      {imagePreviewUrls.length > 0 && (
-        <div className="mt-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Image Previews:</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {imagePreviewUrls.map((url, index) => (
-              <div key={index} className="relative group">
-                <img 
-                  src={url} 
-                  alt={`Preview ${index + 1}`} 
-                  className="h-24 w-full object-cover rounded-md" 
-                />
-                <button
-                  type="button"
-                  onClick={() => removeImage(index)}
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  )
 
   return (
     <div className="bg-gray-50 py-10">
@@ -492,49 +450,260 @@ const PostProperty = () => {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <div className={`h-2 ${step >= 1 ? 'bg-primary-500' : 'bg-gray-200'} rounded-l-full`}></div>
+              <div className={`h-2 ${step >= 1 ? 'bg-indigo-500' : 'bg-gray-200'} rounded-l-full`}></div>
             </div>
             <div className="flex-1">
-              <div className={`h-2 ${step >= 2 ? 'bg-primary-500' : 'bg-gray-200'}`}></div>
+              <div className={`h-2 ${step >= 2 ? 'bg-indigo-500' : 'bg-gray-200'}`}></div>
             </div>
             <div className="flex-1">
-              <div className={`h-2 ${step >= 3 ? 'bg-primary-500' : 'bg-gray-200'} rounded-r-full`}></div>
+              <div className={`h-2 ${step >= 3 ? 'bg-indigo-500' : 'bg-gray-200'} rounded-r-full`}></div>
             </div>
           </div>
           <div className="flex justify-between mt-2">
-            <div className={`text-sm ${step >= 1 ? 'text-primary-600 font-medium' : 'text-gray-500'}`}>Basic Info</div>
-            <div className={`text-sm ${step >= 2 ? 'text-primary-600 font-medium' : 'text-gray-500'}`}>Property Details</div>
-            <div className={`text-sm ${step >= 3 ? 'text-primary-600 font-medium' : 'text-gray-500'}`}>Images</div>
+            <div className={`text-sm ${step >= 1 ? 'text-indigo-600 font-medium' : 'text-gray-500'}`}>Basic Info</div>
+            <div className={`text-sm ${step >= 2 ? 'text-indigo-600 font-medium' : 'text-gray-500'}`}>Property Details</div>
+            <div className={`text-sm ${step >= 3 ? 'text-indigo-600 font-medium' : 'text-gray-500'}`}>Images</div>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm p-8">
           {getError('property-form') && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6 flex items-start">
-              <FiAlertCircle className="mr-2 mt-0.5 flex-shrink-0" />
+              <AlertCircleIcon className="mr-2 mt-0.5 flex-shrink-0 h-5 w-5" />
               <span>{getError('property-form')}</span>
             </div>
           )}
 
           {success && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-6 flex items-start">
-              <FiCheckCircle className="mr-2 mt-0.5 flex-shrink-0" />
+              <CheckCircleIcon className="mr-2 mt-0.5 flex-shrink-0 h-5 w-5" />
               <span>Property posted successfully! Redirecting to your properties...</span>
             </div>
           )}
 
           <form onSubmit={handleSubmit}>
-            {step === 1 && renderStep1()}
-            {step === 2 && renderStep2()}
-            {step === 3 && renderStep3()}
+            {step === 1 && (
+              <div>
+                <h2 className="text-xl font-semibold mb-6">Basic Information</h2>
+                
+                <div className="mb-4">
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                    Property Title *
+                  </label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    className="form-input block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    placeholder="e.g. Premium Plot in Ammapet"
+                    required
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <label htmlFor="property_type" className="block text-sm font-medium text-gray-700 mb-1">
+                    Property Type *
+                  </label>
+                  <select
+                    id="property_type"
+                    name="property_type"
+                    value={formData.property_type}
+                    onChange={handleChange}
+                    className="form-input block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    required
+                  >
+                    <option value="">Select Property Type</option>
+                    {propertyTypes.map(type => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+                      Price (₹) *
+                    </label>
+                    <input
+                      type="number"
+                      id="price"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleChange}
+                      className="form-input block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      placeholder="e.g. 2500000"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="size" className="block text-sm font-medium text-gray-700 mb-1">
+                      Size (sq.ft) *
+                    </label>
+                    <input
+                      type="number"
+                      id="size"
+                      name="size"
+                      value={formData.size}
+                      onChange={handleChange}
+                      className="form-input block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      placeholder="e.g. 1200"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="mb-4">
+                  <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+                    Location *
+                  </label>
+                  <select
+                    id="location"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    className="form-input block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    required
+                  >
+                    <option value="">Select Location</option>
+                    {locations.map(location => (
+                      <option key={location.id} value={location.id}>
+                        {location.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+            {step === 2 && (
+              <div>
+                <h2 className="text-xl font-semibold mb-6">Property Details</h2>
+                
+                <div className="mb-4">
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                    Description *
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows="4"
+                    className="form-input block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    placeholder="Describe your property in detail..."
+                    required
+                  ></textarea>
+                </div>
+                
+                <div className="mb-4">
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Address *
+                  </label>
+                  <textarea
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    rows="2"
+                    className="form-input block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                    placeholder="Enter the complete address of the property"
+                    required
+                  ></textarea>
+                </div>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Features *
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {featureOptions.map(feature => (
+                      <div key={feature} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`feature-${feature}`}
+                          checked={formData.features.includes(feature)}
+                          onChange={() => handleFeatureToggle(feature)}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        />
+                        <label htmlFor={`feature-${feature}`} className="ml-2 text-sm text-gray-700">
+                          {feature}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            {step === 3 && (
+              <div>
+                <h2 className="text-xl font-semibold mb-6">Upload Images</h2>
+                
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Property Images *
+                  </label>
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                    <div className="space-y-1 text-center">
+                      <UploadIcon className="mx-auto h-12 w-12 text-gray-400" />
+                      <div className="flex text-sm text-gray-600">
+                        <label htmlFor="images" className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none">
+                          <span>Upload images</span>
+                          <input 
+                            id="images" 
+                            name="images" 
+                            type="file" 
+                            multiple 
+                            accept="image/*" 
+                            className="sr-only" 
+                            onChange={handleImageChange} 
+                          />
+                        </label>
+                        <p className="pl-1">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        PNG, JPG, GIF up to 5MB (max 5 images)
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                {imagePreviewUrls.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">Image Previews:</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                      {imagePreviewUrls.map((url, index) => (
+                        <div key={index} className="relative group">
+                          <img 
+                            src={url} 
+                            alt={`Preview ${index + 1}`} 
+                            className="h-24 w-full object-cover rounded-md" 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2Icon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="mt-8 flex justify-between">
               {step > 1 && (
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="btn btn-secondary"
-                  disabled={loading}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  disabled={isLoading('upload-images') || isLoading('create-property')}
                 >
                   Previous
                 </button>
@@ -544,14 +713,14 @@ const PostProperty = () => {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="btn btn-primary ml-auto"
+                  className="ml-auto inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Next
                 </button>
               ) : (
                 <button
                   type="submit"
-                  className="btn btn-primary ml-auto"
+                  className="ml-auto inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   disabled={isLoading('upload-images') || isLoading('create-property')}
                 >
                   {isLoading('upload-images') || isLoading('create-property') ? (
@@ -567,7 +736,20 @@ const PostProperty = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default PostProperty
+// Top-level App Component to wrap the providers
+const App = () => {
+  return (
+    <ErrorProvider>
+      <LoadingProvider>
+        <AuthProvider>
+          <PostProperty />
+        </AuthProvider>
+      </LoadingProvider>
+    </ErrorProvider>
+  );
+};
+
+export default App;
