@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FiSave, FiEye, FiX, FiImage, FiLink, FiList, FiAlignLeft, FiAlignCenter, FiAlignRight, FiArrowLeft, FiAlertCircle } from 'react-icons/fi'
-import { useLoading, useError, useApi } from '../../contexts'
+import { useLoading, useError } from '../../contexts'
+import { useApi } from '../../hooks/useApi'
 import blogService from '../../services/blogService'
 import uploadService from '../../services/uploadService'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
@@ -22,7 +23,7 @@ const BlogEditor = ({ isEditMode = false, postId }) => {
     status: 'draft'
   })
   
-  const { isLoading, setLoading, clearLoading } = useLoading()
+  const { isLoading, setLoading } = useLoading()
   const { setError, clearError, getError } = useError()
   const { request } = useApi()
   
@@ -61,13 +62,13 @@ const BlogEditor = ({ isEditMode = false, postId }) => {
           console.error('Error fetching blog post:', error)
           setError('blog-editor', 'Failed to load blog post. Please try again.')
         } finally {
-          clearLoading('blog-editor')
+          setLoading('blog-editor', false)
         }
       }
 
       fetchPost()
     }
-  }, [id, isEditMode, request, setLoading, clearLoading, setError, clearError])
+  }, [id, isEditMode, request, setLoading, setError, clearError])
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -160,7 +161,7 @@ const BlogEditor = ({ isEditMode = false, postId }) => {
       console.error('Error saving blog post:', error)
       setError('blog-editor-save', 'Failed to save blog post. Please try again.')
     } finally {
-      clearLoading('blog-editor-save')
+      setLoading('blog-editor-save', false)
     }
   }
 
