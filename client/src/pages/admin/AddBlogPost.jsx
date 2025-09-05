@@ -6,7 +6,4 @@ const AddBlogPost = () => {
   return <BlogEditor />;
 };
 
-
-};
-
 export default AddBlogPost;
