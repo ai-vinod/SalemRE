@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FiSave, FiUpload, FiTrash2, FiPlus, FiX, FiAlertCircle } from 'react-icons/fi'
-import { useLoading, useError } from '../../contexts/LoadingContext'
+import { useLoading } from '../../contexts/LoadingContext'
+import { useError } from '../../contexts/ErrorContext'
 import { useApi } from '../../hooks/useApi'
 import propertyService from '../../services/propertyService'
 import uploadService from '../../services/uploadService'
@@ -12,7 +13,7 @@ const PropertyForm = () => {
   const { id } = useParams()
   const isEditMode = Boolean(id)
   
-  const { isLoading, setLoading, clearLoading } = useLoading()
+  const { isLoading, setLoading } = useLoading()
   const { getError, setError, clearError } = useError()
   const { request } = useApi()
   
@@ -85,13 +86,13 @@ const PropertyForm = () => {
           console.error('Error fetching property:', error)
           setError('property-form', 'Failed to load property data. Please try again.')
         } finally {
-          clearLoading('fetch-property')
+          setLoading('fetch-property', false)
         }
       }
     }
     
     fetchProperty()
-  }, [isEditMode, id, request, clearError, setLoading, clearLoading, setError])
+  }, [isEditMode, id, request, clearError, setLoading, setError])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -192,7 +193,7 @@ const PropertyForm = () => {
           images: prev.images.filter(img => img.id !== fileId)
         }))
       } finally {
-        clearLoading(`upload-image-${fileId}`)
+        setLoading(`upload-image-${fileId}`, false)
       }
     }
   }
@@ -232,7 +233,7 @@ const PropertyForm = () => {
       console.error('Error removing image:', error)
       setError('remove-image', 'Failed to remove image. Please try again.')
     } finally {
-      clearLoading(`remove-image-${imageId}`)
+      setLoading(`remove-image-${imageId}`, false)
     }
   }
 
@@ -261,7 +262,7 @@ const PropertyForm = () => {
       console.error('Error setting main image:', error)
       setError('image-upload', 'Failed to set main image. Please try again.')
     } finally {
-      clearLoading('set-main-image')
+      setLoading('set-main-image', false)
     }
   }
 
@@ -338,7 +339,7 @@ const PropertyForm = () => {
       console.error('Error saving property:', error)
       setError('property-form', 'Failed to save property. Please try again.')
     } finally {
-       clearLoading('save-property')
+       setLoading('save-property', false)
      }
    }
   }
