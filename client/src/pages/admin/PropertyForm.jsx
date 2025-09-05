@@ -92,7 +92,7 @@ const PropertyForm = () => {
     }
     
     fetchProperty()
-  }, [isEditMode, id, request, clearError, setLoading, setError])
+  }, [isEditMode, id, request, setLoading, setError, clearError])
 
   const handleChange = (e) => {
     const { name, value } = e.target
