@@ -5,7 +5,7 @@ import { useLoading } from '../../contexts/LoadingContext'
 import { useError } from '../../contexts/ErrorContext'
 import { useApi } from '../../hooks/useApi'
 import blogService from '../../services/blogService'
-import LoadingSpinner from '../../components/common/LoadingSpinner'
+import LoadingSpinner from '../../components/ui/LoadingSpinner'
 
 const BlogPosts = () => {
   const { isLoading, setLoading, clearLoading } = useLoading()

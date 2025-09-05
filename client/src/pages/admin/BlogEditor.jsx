@@ -4,7 +4,7 @@ import { FiSave, FiEye, FiX, FiImage, FiLink, FiList, FiAlignLeft, FiAlignCenter
 import { useLoading, useError, useApi } from '../../contexts'
 import blogService from '../../services/blogService'
 import uploadService from '../../services/uploadService'
-import LoadingSpinner from '../../components/common/LoadingSpinner'
+import LoadingSpinner from '../../components/ui/LoadingSpinner'
 
 const BlogEditor = ({ isEditMode = false, postId }) => {
   const navigate = useNavigate()
