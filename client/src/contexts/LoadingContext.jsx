@@ -8,11 +8,7 @@ export const useLoading = () => {
   return { loading, setLoading, clearLoading };
 };
 
-// Hook to manage error states (New addition to resolve the build error)
-export const useError = () => {
-  const { error, setError, clearError } = useContext(LoadingContext);
-  return { error, setError, clearError };
-};
+// Error handling is now managed in ErrorContext.jsx
 
 export const LoadingProvider = ({ children }) => {
   const [loading, setLoading] = useState({});
