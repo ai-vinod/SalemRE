@@ -631,6 +631,8 @@ const PostPropertyPage = ({ onNavigate }) => {
                   </div>
                 </div>
                 
+                {/* --- Image Preview Section (Temporarily Commented Out) --- */}
+                {/*
                 {Array.isArray(imagePreviewUrls) && imagePreviewUrls.length > 0 && (
                   <div className="mt-4">
                     <h3 className="text-sm font-medium text-gray-700 mb-2">Image Previews:</h3>
@@ -654,6 +656,7 @@ const PostPropertyPage = ({ onNavigate }) => {
                     </div>
                   </div>
                 )}
+                */}
               </div>
             )}
 
@@ -727,7 +730,7 @@ const MyPropertiesPage = ({ onNavigate }) => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
       <div className="bg-white rounded-lg shadow-sm p-8 max-w-sm text-center">
-        <h2 className="text-2xl font-bold mb-4">My Properties</h2>
+        <h2 className="2xl font-bold mb-4">My Properties</h2>
         <p className="text-gray-600 mb-6">
           This is a placeholder for the "My Properties" page.
         </p>
