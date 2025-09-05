@@ -1,5 +1,4 @@
 import React, { useState, useEffect, createContext, useContext, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 // All dependencies (contexts, hooks, services, and components) are included in this single file.
 
@@ -8,25 +7,6 @@ import { useNavigate } from 'react-router-dom';
 // AuthContext
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
-
-// Use a mock user for demonstration within a single-file React app.
-// In a real application, you would connect this to a real authentication service.
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    // Simulate fetching the user's authentication status
-    const mockUser = { id: 'mock-user-123', email: 'user@example.com' };
-    setUser(mockUser);
-  }, []);
-
-  return (
-    <AuthContext.Provider value={{ user }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
 
 // LoadingContext
 const LoadingContext = createContext(null);
@@ -90,11 +70,12 @@ export const ErrorProvider = ({ children }) => {
 
 // useApi hook (a simplified mock version)
 export const useApi = () => {
-  const { setError } = useError();
+  const { setError, clearError } = useError();
   const { setLoading } = useLoading();
 
   const request = useCallback(async (apiCall, loadingKey) => {
     try {
+      clearError(loadingKey);
       setLoading(loadingKey, true);
       const result = await apiCall();
       return result;
@@ -105,7 +86,7 @@ export const useApi = () => {
     } finally {
       setLoading(loadingKey, false);
     }
-  }, [setError, setLoading]);
+  }, [setError, clearError, setLoading]);
 
   return { request };
 };
@@ -146,7 +127,7 @@ const LoadingSpinner = ({ size = 'md', className = '' }) => {
   );
 };
 
-// Inline SVG Icons to replace react-icons/fi
+// Inline SVG Icons to replace external libraries
 const UploadIcon = (props) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -171,11 +152,10 @@ const Trash2Icon = (props) => (
   </svg>
 );
 
-// --- Main Component ---
+// --- Page Components (Mocking routing with state) ---
 
-const PostProperty = () => {
+const PostPropertyPage = ({ onNavigate }) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { isLoading, setLoading } = useLoading();
   const { getError, setError, clearError } = useError();
   const { request } = useApi();
@@ -194,24 +174,6 @@ const PostProperty = () => {
   const [imagePreviewUrls, setImagePreviewUrls] = useState([]);
   const [success, setSuccess] = useState(false);
   const [step, setStep] = useState(1);
-  const [isAuthReady, setIsAuthReady] = useState(false);
-
-  // Auth check and redirection
-  useEffect(() => {
-    const checkAuth = async () => {
-      // Simulate waiting for auth state to resolve
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setIsAuthReady(true);
-    };
-
-    checkAuth();
-  }, []);
-
-  useEffect(() => {
-    if (isAuthReady && !user) {
-      navigate('/login'); // Redirect to login page if not authenticated
-    }
-  }, [isAuthReady, user, navigate]);
 
   const propertyTypes = [
     { id: 'plot', name: 'Plot' },
@@ -419,7 +381,7 @@ const PostProperty = () => {
       setSuccess(true);
 
       setTimeout(() => {
-        navigate('/my-properties');
+        onNavigate('my-properties');
       }, 2000);
 
     } catch (err) {
@@ -427,14 +389,6 @@ const PostProperty = () => {
       setError('property-form', err.message || 'Failed to post property. Please try again.');
     }
   };
-
-  if (!isAuthReady) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <LoadingSpinner />
-      </div>
-    );
-  }
 
   return (
     <div className="bg-gray-50 py-10">
@@ -739,16 +693,101 @@ const PostProperty = () => {
   );
 };
 
-// Top-level App Component to wrap the providers
-const App = () => {
+const LoginPage = ({ onNavigate }) => {
+  useEffect(() => {
+    // In a real app, you would handle a login form here.
+    // For this mock, we'll just show a message.
+  }, []);
+
   return (
-    <ErrorProvider>
-      <LoadingProvider>
-        <AuthProvider>
-          <PostProperty />
-        </AuthProvider>
-      </LoadingProvider>
-    </ErrorProvider>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+      <div className="bg-white rounded-lg shadow-sm p-8 max-w-sm text-center">
+        <h2 className="text-2xl font-bold mb-4">Mock Login Page</h2>
+        <p className="text-gray-600 mb-6">
+          You must be authenticated to post a property.
+        </p>
+        <button
+          onClick={() => onNavigate('post-property')}
+          className="w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+        >
+          Go to Post Property Page
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const MyPropertiesPage = ({ onNavigate }) => {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+      <div className="bg-white rounded-lg shadow-sm p-8 max-w-sm text-center">
+        <h2 className="text-2xl font-bold mb-4">My Properties</h2>
+        <p className="text-gray-600 mb-6">
+          This is a placeholder for the "My Properties" page.
+        </p>
+        <button
+          onClick={() => onNavigate('post-property')}
+          className="w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+        >
+          Go Back to Post Property
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Top-level App Component to wrap the providers and handle routing
+const App = () => {
+  const [currentPage, setCurrentPage] = useState('loading');
+  const [user, setUser] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+  // Auth simulation and state management
+  useEffect(() => {
+    // Simulate fetching the user's authentication status
+    const mockUser = { id: 'mock-user-123', email: 'user@example.com' };
+    
+    setTimeout(() => {
+      setIsAuthLoading(false);
+      setUser(mockUser);
+      // Automatically navigate to the main page after auth is done
+      setCurrentPage('post-property');
+    }, 500); // Simulate network delay
+  }, []);
+
+  const handleNavigate = (page) => {
+    setCurrentPage(page);
+  };
+
+  if (isAuthLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'post-property':
+        return <PostPropertyPage onNavigate={handleNavigate} />;
+      case 'my-properties':
+        return <MyPropertiesPage onNavigate={handleNavigate} />;
+      case 'login':
+        return <LoginPage onNavigate={handleNavigate} />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <AuthContext.Provider value={{ user }}>
+      <ErrorProvider>
+        <LoadingProvider>
+          {renderPage()}
+        </LoadingProvider>
+      </ErrorProvider>
+    </AuthContext.Provider>
   );
 };
 
