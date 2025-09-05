@@ -156,7 +156,7 @@ const Trash2Icon = (props) => (
 
 const PostPropertyPage = ({ onNavigate }) => {
   const { user } = useAuth();
-  const { isLoading, setLoading } = useLoading();
+  const { isLoading } = useLoading();
   const { getError, setError, clearError } = useError();
   const { request } = useApi();
 
@@ -243,30 +243,37 @@ const PostPropertyPage = ({ onNavigate }) => {
 
   const handleImageChange = (e) => {
     e.preventDefault();
+    const newFiles = Array.from(e.target.files);
 
-    const files = Array.from(e.target.files);
-
-    if (images.length + files.length > 5) {
+    if (images.length + newFiles.length > 5) {
       setError('property-form', 'You can upload a maximum of 5 images');
       return;
     }
 
     clearError('property-form');
 
-    const newImagePreviewUrls = [...imagePreviewUrls];
-    const newImages = [...images];
-
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        newImagePreviewUrls.push(reader.result);
-        setImagePreviewUrls([...newImagePreviewUrls]);
-      };
-      reader.readAsDataURL(file);
-      newImages.push(file);
+    const fileReaders = newFiles.map(file => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          resolve(reader.result);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     });
 
-    setImages(newImages);
+    // Use Promise.all to wait for all files to be read before updating state.
+    // This prevents race conditions and ensures a single, atomic state update.
+    Promise.all(fileReaders)
+      .then(urls => {
+        setImages(prevImages => [...prevImages, ...newFiles]);
+        setImagePreviewUrls(prevUrls => [...prevUrls, ...urls]);
+      })
+      .catch(err => {
+        console.error('Error reading files:', err);
+        setError('property-form', 'Failed to read image files.');
+      });
   };
 
   const removeImage = (index) => {
@@ -353,21 +360,22 @@ const PostPropertyPage = ({ onNavigate }) => {
     clearError('property-form');
 
     try {
-      setLoading('upload-images', true);
-      const imageUrls = await Promise.all(
-        images.map(async (image) => {
-          const imageFormData = new FormData();
-          imageFormData.append('image', image);
-          const uploadResult = await request(
-            () => uploadService.uploadPropertyImages(imageFormData),
-            'upload-images'
+      // Use useApi hook to manage loading and error states for the entire upload process.
+      const imageUrls = await request(
+        async () => {
+          // Promise.all to handle multiple asynchronous image uploads in parallel.
+          return await Promise.all(
+            images.map(async (image) => {
+              const imageFormData = new FormData();
+              imageFormData.append('image', image);
+              const uploadResult = await uploadService.uploadPropertyImages(imageFormData);
+              return uploadResult.url;
+            })
           );
-          return uploadResult.url;
-        })
+        },
+        'upload-images'
       );
-      setLoading('upload-images', false);
 
-      setLoading('create-property', true);
       const propertyData = {
         ...formData,
         price: Number(formData.price),
@@ -376,10 +384,8 @@ const PostPropertyPage = ({ onNavigate }) => {
       };
 
       await request(() => propertyService.createProperty(propertyData), 'create-property');
-      setLoading('create-property', false);
-
+      
       setSuccess(true);
-
       setTimeout(() => {
         onNavigate('my-properties');
       }, 2000);
