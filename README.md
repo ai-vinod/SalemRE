@@ -2,9 +2,11 @@
 
 A full-stack real estate website with property listings, blog, user authentication, and admin dashboard.
 
-## Deployment Instructions
+## Deployment Options
 
-### Backend Deployment (Heroku)
+### Option 1: Manual Deployment
+
+#### Backend Deployment (Heroku)
 
 1. Create a Heroku account and install the Heroku CLI
 2. Login to Heroku CLI:
@@ -37,7 +39,7 @@ A full-stack real estate website with property listings, blog, user authenticati
    heroku run node seeder.js
    ```
 
-### Frontend Deployment (Netlify)
+#### Frontend Deployment (Netlify)
 
 1. Create a Netlify account and install Netlify CLI
 2. Login to Netlify CLI:
@@ -55,6 +57,40 @@ A full-stack real estate website with property listings, blog, user authenticati
    ```
 
 Alternatively, you can connect your GitHub repository to Netlify for automatic deployments.
+
+### Option 2: Docker Deployment
+
+1. Make sure Docker and Docker Compose are installed on your system
+2. Build the Docker images:
+   ```
+   npm run docker:build
+   ```
+3. Start the containers:
+   ```
+   npm run docker:up
+   ```
+4. View logs (optional):
+   ```
+   npm run docker:logs
+   ```
+5. Stop the containers when done:
+   ```
+   npm run docker:down
+   ```
+
+### Option 3: CI/CD with GitHub Actions
+
+1. Fork or clone this repository to your GitHub account
+2. Set up the following secrets in your GitHub repository settings:
+   - `HEROKU_API_KEY`: Your Heroku API key
+   - `HEROKU_EMAIL`: Your Heroku account email
+   - `JWT_SECRET`: Secret key for JWT authentication
+   - `CLOUDINARY_CLOUD_NAME`: Your Cloudinary cloud name
+   - `CLOUDINARY_API_KEY`: Your Cloudinary API key
+   - `CLOUDINARY_API_SECRET`: Your Cloudinary API secret
+   - `NETLIFY_AUTH_TOKEN`: Your Netlify authentication token
+   - `NETLIFY_SITE_ID`: Your Netlify site ID
+3. Push changes to the main branch to trigger automatic deployment
 
 ## Environment Variables
 
