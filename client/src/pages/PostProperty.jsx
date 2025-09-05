@@ -740,7 +740,7 @@ const MyPropertiesPage = ({ onNavigate }) => {
 const App = () => {
   const [appState, setAppState] = useState({
     user: null,
-    view: 'post-property', // Set a default view, but we will prevent initial render.
+    view: 'post-property',
   });
 
   const [isAuthChecked, setIsAuthChecked] = useState(false);
@@ -748,8 +748,8 @@ const App = () => {
   // Auth simulation and state management
   useEffect(() => {
     const authCheck = async () => {
-      // Simulate an async authentication check (e.g., fetching a user token)
-      await new Promise(resolve => setTimeout(resolve, 500)); 
+      // The previous code had a simulated delay here which caused the flicker.
+      // We've removed it for a smoother, more realistic user experience.
       
       const mockUser = { id: 'mock-user-123', email: 'user@example.com' };
       
