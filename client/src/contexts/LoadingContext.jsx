@@ -1,28 +1,59 @@
-import { createContext, useState, useContext } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
-const LoadingContext = createContext(null);
+const LoadingContext = createContext();
 
-export const useLoading = () => useContext(LoadingContext);
+// Hook to manage loading states
+export const useLoading = () => {
+  const { loading, setLoading, clearLoading } = useContext(LoadingContext);
+  return { loading, setLoading, clearLoading };
+};
+
+// Hook to manage error states (New addition to resolve the build error)
+export const useError = () => {
+  const { error, setError, clearError } = useContext(LoadingContext);
+  return { error, setError, clearError };
+};
 
 export const LoadingProvider = ({ children }) => {
-  const [loadingStates, setLoadingStates] = useState({});
+  const [loading, setLoading] = useState({});
+  const [error, setError] = useState({}); // State for managing errors
 
-  const setLoading = (key, isLoading) => {
-    setLoadingStates(prev => ({
-      ...prev,
-      [key]: isLoading
-    }));
+  const setLoadingState = (key, value) => {
+    setLoading(prev => ({ ...prev, [key]: value }));
   };
 
-  const isLoading = (key) => {
-    return !!loadingStates[key];
+  const clearLoadingState = (key) => {
+    setLoading(prev => {
+      const { [key]: _, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  const setErrorState = (key, message) => { // Function to set an error
+    setError(prev => ({ ...prev, [key]: message }));
+  };
+
+  const clearErrorState = (key) => { // Function to clear an error
+    setError(prev => {
+      const { [key]: _, ...rest } = prev;
+      return rest;
+    });
   };
 
   const value = {
-    setLoading,
-    isLoading,
-    loadingStates
+    loading,
+    setLoading: setLoadingState,
+    clearLoading: clearLoadingState,
+    error,
+    setError: setErrorState,
+    clearError: clearErrorState,
   };
 
-  return <LoadingContext.Provider value={value}>{children}</LoadingContext.Provider>;
+  return (
+    <LoadingContext.Provider value={value}>
+      {children}
+    </LoadingContext.Provider>
+  );
 };
+
+export default LoadingProvider;
