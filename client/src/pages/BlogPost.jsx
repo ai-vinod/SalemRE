@@ -9,7 +9,7 @@ const BlogPost = () => {
   const [post, setPost] = useState(null)
   const [loading, setLoading] = useState(true)
   const [relatedPosts, setRelatedPosts] = useState([])
-
+ 
   useEffect(() => {
     const fetchPost = async () => {
       setLoading(true)
